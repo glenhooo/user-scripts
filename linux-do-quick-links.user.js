@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name             Linux.do 快捷链接
-// @description      为 Linux.do 增加常用的快捷链接
+// @name             Linux.do 快捷链接新标签打开
+// @description      为 Linux.do 增加常用的快捷链接，新标签打开帖子
 // @version          0.1
 // @match            *://linux.do/*
 // @grant            window.onurlchange
@@ -49,20 +49,14 @@ function addHeaderButtons() {
         console.error("$wrap not found");
     }
 }
+const postLinkSelector = "tr.topic-list-item a.title";
+const containerSelector = ".topic-list-body";
 function makeOpenInNewTab() {
     console.log("makeOpenInNewTab");
-    function isTargetPage() {
-        const path = window.location.pathname;
-        return (path === "/" ||
-            path === "/search" ||
-            (path.startsWith("/u/") && path.endsWith("/activity/bookmarks")) ||
-            (path.startsWith("/u/") && path.includes("/activity/topics")));
-    }
     function modifyLinks() {
-        if (!isTargetPage()) {
-            return;
-        }
-        const postLinks = document.querySelectorAll("a[data-topic-id]");
+        var _a;
+        const postLinks = (_a = document
+            .querySelector(containerSelector)) === null || _a === void 0 ? void 0 : _a.querySelectorAll(postLinkSelector);
         postLinks.forEach(link => {
             var _a;
             if (link.href && (link.href.includes("/t/") || link.href.includes("/d/"))) {
@@ -81,9 +75,31 @@ function makeOpenInNewTab() {
     }
     modifyLinks();
 }
+function observeNewPosts() {
+    const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === "childList") {
+                const newPosts = mutation.addedNodes;
+                newPosts.forEach(post => {
+                    if (post.nodeType === Node.ELEMENT_NODE) {
+                        const $post = post;
+                        if ($post.matches(postLinkSelector)) {
+                            makeOpenInNewTab();
+                        }
+                    }
+                });
+            }
+        }
+    });
+    observer.observe(document.querySelector(containerSelector), {
+        childList: true,
+        subtree: true,
+    });
+}
 window.addEventListener("load", () => {
     addHeaderButtons();
     makeOpenInNewTab();
+    observeNewPosts();
 });
 document.addEventListener("DOMContentLoaded", makeOpenInNewTab);
 
