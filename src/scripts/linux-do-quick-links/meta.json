@@ -1,6 +1,6 @@
 {
-  "name": "Linux.do 快捷链接",
-  "description": "为 Linux.do 增加常用的快捷链接",
+  "name": "Linux.do 快捷链接新标签打开",
+  "description": "为 Linux.do 增加常用的快捷链接，新标签打开帖子",
   "version": "0.1",
   "match": ["*://linux.do/*"],
   "grant": ["window.onurlchange", "unsafeWindow"],

@@ -23,29 +23,17 @@ function addHeaderButtons() {
   }
 }
 
+const postLinkSelector = "tr.topic-list-item a.title"; // 帖子链接的选择器
+const containerSelector = ".topic-list-body"; // 帖子列表的“容器”选择器
 function makeOpenInNewTab() {
   console.log("makeOpenInNewTab");
 
-  // 检查当前条件
-  function isTargetPage() {
-    const path = window.location.pathname;
-    return (
-      path === "/" ||
-      path === "/search" ||
-      (path.startsWith("/u/") && path.endsWith("/activity/bookmarks")) ||
-      (path.startsWith("/u/") && path.includes("/activity/topics"))
-    );
-  }
-
   // 主函数，用于修改链接
   function modifyLinks() {
-    // 如果不是目标页面，则不执行任何操作
-    if (!isTargetPage()) {
-      return;
-    }
-
     // 选择所有帖子链接 - 更精确的选择器
-    const postLinks = document.querySelectorAll("a[data-topic-id]") as NodeListOf<HTMLAnchorElement>;
+    const postLinks = document
+      .querySelector(containerSelector)
+      ?.querySelectorAll(postLinkSelector) as NodeListOf<HTMLAnchorElement>;
 
     // 遍历所有链接并添加 target="_blank" 属性
     postLinks.forEach(link => {
@@ -77,9 +65,35 @@ function makeOpenInNewTab() {
   modifyLinks();
 }
 
+function observeNewPosts() {
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        const newPosts = mutation.addedNodes;
+        newPosts.forEach(post => {
+          if (post.nodeType === Node.ELEMENT_NODE) {
+            const $post = post as HTMLElement;
+            if ($post.matches(postLinkSelector)) {
+              makeOpenInNewTab();
+            }
+          }
+        });
+      }
+    }
+  });
+
+  observer.observe(document.querySelector(containerSelector) as Node, {
+    childList: true,
+    subtree: true,
+  });
+}
+
 window.addEventListener("load", () => {
   addHeaderButtons();
+  // 新标签页打开
   makeOpenInNewTab();
+  // 监听新帖子
+  observeNewPosts();
 });
 
 // 也在 DOMContentLoaded 时执行一次
