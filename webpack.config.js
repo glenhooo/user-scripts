@@ -7,6 +7,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const commonMeta = require("./src/meta.common.json");
 
 const scriptsFolder = "./src/scripts";
+const jsScriptsFolder = "./src/js-scripts";
 
 /**
  * 解析meta文件附加到js文件头部
@@ -96,6 +97,31 @@ class MetaPlugin {
   }
 }
 
+class CopyJsScriptsPlugin {
+  apply(compiler) {
+    compiler.hooks.thisCompilation.tap("CopyJsScriptsPlugin", compilation => {
+      compilation.hooks.processAssets.tap(
+        {
+          name: "CopyJsScriptsPlugin",
+          stage: webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
+        },
+        () => {
+          if (!fs.existsSync(jsScriptsFolder)) return;
+          const files = fs.readdirSync(jsScriptsFolder);
+          files.forEach(file => {
+            if (file.endsWith(".js")) {
+              const filePath = path.join(jsScriptsFolder, file);
+              const content = fs.readFileSync(filePath, "utf-8");
+              compilation.emitAsset(file, new webpack.sources.RawSource(content));
+            }
+          });
+        }
+      );
+    });
+  }
+}
+
+
 const getEntries = () => {
   const entries = new Map();
   fs.readdirSync(scriptsFolder).forEach(dir => {
@@ -153,5 +179,5 @@ module.exports = {
       }),
     ],
   },
-  plugins: [new CleanWebpackPlugin(), new MetaPlugin()],
+  plugins: [new CleanWebpackPlugin(), new MetaPlugin(), new CopyJsScriptsPlugin()],
 };
